@@ -12,3 +12,15 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+export class LoginResponseDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  accessToken: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  refreshToken: string;
+}
