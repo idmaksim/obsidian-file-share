@@ -6,7 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-
+  app.enableCors();
   const config = new DocumentBuilder()
     .setTitle('Obsidian File Share API')
     .addBearerAuth({

@@ -1,27 +1,27 @@
 <template>
   <div class="login-container">
     <div class="login-form">
-      <h1>Вход</h1>
+      <h2>Вход в систему</h2>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="email" 
+          <label for="username">Имя пользователя</label>
+          <input
+            type="text"
+            id="username"
+            v-model="username"
             required
-            placeholder="Введите email"
-          >
+            placeholder="Введите имя пользователя"
+          />
         </div>
         <div class="form-group">
           <label for="password">Пароль</label>
-          <input 
-            type="password" 
-            id="password" 
-            v-model="password" 
+          <input
+            type="password"
+            id="password"
+            v-model="password"
             required
             placeholder="Введите пароль"
-          >
+          />
         </div>
         <button type="submit" class="login-button">Войти</button>
       </form>
@@ -30,23 +30,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { auth } from '../services/api';
 
-const router = useRouter()
-const email = ref('')
-const password = ref('')
+const router = useRouter();
+const username = ref('');
+const password = ref('');
 
 const handleLogin = async () => {
   try {
-    // TODO: Implement login logic here
-    console.log('Login attempt:', { email: email.value, password: password.value })
-    // После успешного входа перенаправляем на главную страницу
-    router.push('/')
+    const response = await auth.login(username.value, password.value);
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    router.push('/');
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('Login error:', error);
   }
-}
+};
 </script>
 
 <style scoped>
@@ -73,7 +74,7 @@ const handleLogin = async () => {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-h1 {
+h2 {
   color: var(--white-color);
   margin-bottom: 2rem;
   text-align: center;

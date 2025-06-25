@@ -1,124 +1,76 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { files as filesApi } from '../services/api';
 import PaperIcon from '../assets/img/Paper.svg';
 import FolderIcon from '../assets/img/Folder.svg';
 import EditIcon from '../assets/img/Edit.svg';
 import CloseIcon from '../assets/img/Close Square.svg';
 
-interface File {
-    id: string;
-    name: string;
-    type: 'file' | 'folder';
-    size?: number;
-    lastModified: Date;
-    path: string;
-    children?: File[];
-}
+const router = useRouter();
+const loading = ref(false);
+const error = ref('');
+const currentPath = ref('');
+const files = ref<string[]>([]);
+const folders = ref<string[]>([]);
 
-// Здесь будут данные с бэкенда
-const mockFiles: File[] = [
-    {
-        id: '1',
-        name: 'Документы',
-        type: 'folder',
-        lastModified: new Date(),
-        path: '/documents',
-        children: [
-            {
-                id: '1-1',
-                name: 'рабочие',
-                type: 'folder',
-                lastModified: new Date(),
-                path: '/documents/рабочие',
-                children: [
-                    {
-                        id: '1-1-1',
-                        name: 'отчет.md',
-                        type: 'file',
-                        size: 2048,
-                        lastModified: new Date(),
-                        path: '/documents/рабочие/отчет.md'
-                    }
-                ]
-            },
-            {
-                id: '1-2',
-                name: 'заметки.md',
-                type: 'file',
-                size: 1024,
-                lastModified: new Date(),
-                path: '/documents/заметки.md'
-            }
-        ]
-    },
-    {
-        id: '2',
-        name: 'важные_заметки.md',
-        type: 'file',
-        size: 1024,
-        lastModified: new Date(),
-        path: '/важные_заметки.md'
-    },
-    {
-        id: '3',
-        name: 'проекты',
-        type: 'folder',
-        lastModified: new Date(),
-        path: '/projects',
-        children: [
-            {
-                id: '3-1',
-                name: 'веб-сайт',
-                type: 'folder',
-                lastModified: new Date(),
-                path: '/projects/веб-сайт',
-                children: [
-                    {
-                        id: '3-1-1',
-                        name: 'идеи.md',
-                        type: 'file',
-                        size: 3072,
-                        lastModified: new Date(),
-                        path: '/projects/веб-сайт/идеи.md'
-                    }
-                ]
-            }
-        ]
-    }
-];
+const pathParts = computed(() => {
+    if (!currentPath.value) return [];
+    return currentPath.value.split('/').filter(Boolean);
+});
 
-const currentPath = ref<string[]>([]);
-const files = ref<File[]>(mockFiles);
+const getPathUpToIndex = (index: number): string => {
+    return pathParts.value.slice(0, index + 1).join('/');
+};
 
-// Вычисляем текущие отображаемые файлы на основе пути
-const currentFiles = computed(() => {
-    let result = mockFiles;
-    for (const pathSegment of currentPath.value) {
-        const folder = result.find(f => f.name === pathSegment);
-        if (folder?.children) {
-            result = folder.children;
+const loadFiles = async (path?: string) => {
+    loading.value = true;
+    error.value = '';
+
+    try {
+        const response = await filesApi.list(path);
+        files.value = response.files;
+        folders.value = response.folders;
+        currentPath.value = path || '';
+    } catch (e: any) {
+        if (e?.response?.status === 401) {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            router.push('/login');
+        } else {
+            error.value = 'Ошибка при загрузке файлов';
         }
-    }
-    return result;
-});
-
-// Вычисляем путь навигации
-const breadcrumbs = computed(() => {
-    return [{ name: 'Главная', path: [] }, ...currentPath.value.map((name, index) => ({
-        name,
-        path: currentPath.value.slice(0, index + 1)
-    }))];
-});
-
-const navigateToFolder = (folder: File) => {
-    if (folder.type === 'folder') {
-        currentPath.value.push(folder.name);
+    } finally {
+        loading.value = false;
     }
 };
 
-const navigateToBreadcrumb = (path: string[]) => {
-    currentPath.value = [...path];
+const navigateToFolder = (folderPath: string) => {
+    loadFiles(folderPath);
 };
+
+const navigateToPath = (path: string) => {
+    loadFiles(path);
+};
+
+const getFolderName = (folderPath: string) => {
+    const parts = folderPath.split('/');
+    return parts[parts.length - 2] || folderPath;
+};
+
+const getFileName = (filePath: string) => {
+    const parts = filePath.split('/');
+    return parts[parts.length - 1] || filePath;
+};
+
+onMounted(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        router.push('/login');
+        return;
+    }
+    loadFiles();
+});
 
 const formatFileSize = (size: number): string => {
     if (size < 1024) return `${size} B`;
@@ -142,21 +94,29 @@ const formatDate = (date: Date): string => {
         <h1>Obsidian File Share</h1>
         <p>Просмотр и управление вашими Markdown файлами</p>
         <div class="files-container">
-            <!-- Навигационная цепочка -->
             <div class="breadcrumbs">
-                <span 
-                    v-for="(crumb, index) in breadcrumbs" 
-                    :key="index"
-                    class="breadcrumb-item"
-                >
-                    <span 
-                        class="breadcrumb-link"
-                        @click="navigateToBreadcrumb(crumb.path)"
-                    >
-                        {{ crumb.name }}
+                <span class="breadcrumb-item">
+                    <span class="breadcrumb-link" @click="navigateToPath('')">
+                        Главная
                     </span>
-                    <span v-if="index < breadcrumbs.length - 1" class="breadcrumb-separator">/</span>
                 </span>
+                <template v-if="currentPath">
+                    <span class="breadcrumb-separator">/</span>
+                    <template v-for="(part, index) in pathParts" :key="index">
+                        <span class="breadcrumb-item">
+                            <span 
+                                class="breadcrumb-link" 
+                                @click="navigateToPath(getPathUpToIndex(index))"
+                            >
+                                {{ part }}
+                            </span>
+                        </span>
+                        <span 
+                            v-if="index < pathParts.length - 1" 
+                            class="breadcrumb-separator"
+                        >/</span>
+                    </template>
+                </template>
             </div>
 
             <div class="files-header">
@@ -165,28 +125,53 @@ const formatDate = (date: Date): string => {
                 <div class="date-column">Дата изменения</div>
                 <div class="actions-column">Действия</div>
             </div>
-            <div class="files-list">
-                <div 
-                    v-for="file in currentFiles" 
-                    :key="file.id" 
-                    class="file-item"
-                    :class="{ 'is-folder': file.type === 'folder' }"
-                    @click="file.type === 'folder' && navigateToFolder(file)"
-                >
+
+            <div v-if="loading" class="file-item">
+                <div class="name-column">Загрузка...</div>
+                <div class="size-column"></div>
+                <div class="date-column"></div>
+                <div class="actions-column"></div>
+            </div>
+
+            <div v-else-if="error" class="file-item">
+                <div class="name-column" style="color: var(--red-color)">{{ error }}</div>
+                <div class="size-column"></div>
+                <div class="date-column"></div>
+                <div class="actions-column"></div>
+            </div>
+
+            <div v-else class="files-list">
+                <div v-for="folder in folders" :key="folder" class="file-item is-folder" @click="navigateToFolder(folder)">
                     <div class="name-column">
-                        <img :src="file.type === 'folder' ? FolderIcon : PaperIcon" alt="icon" class="file-icon">
-                        {{ file.name }}
+                        <img :src="FolderIcon" alt="folder" class="file-icon">
+                        {{ getFolderName(folder) }}
                     </div>
-                    <div class="size-column">
-                        {{ file.type === 'file' && file.size ? formatFileSize(file.size) : '-' }}
-                    </div>
-                    <div class="date-column">
-                        {{ formatDate(file.lastModified) }}
-                    </div>
+                    <div class="size-column">-</div>
+                    <div class="date-column">-</div>
                     <div class="actions-column" @click.stop>
                         <img :src="EditIcon" alt="edit" class="action-icon" title="Редактировать">
                         <img :src="CloseIcon" alt="delete" class="action-icon" title="Удалить">
                     </div>
+                </div>
+
+                <div v-for="file in files" :key="file" class="file-item">
+                    <div class="name-column">
+                        <img :src="PaperIcon" alt="file" class="file-icon">
+                        {{ getFileName(file) }}
+                    </div>
+                    <div class="size-column">-</div>
+                    <div class="date-column">-</div>
+                    <div class="actions-column">
+                        <img :src="EditIcon" alt="edit" class="action-icon" title="Редактировать">
+                        <img :src="CloseIcon" alt="delete" class="action-icon" title="Удалить">
+                    </div>
+                </div>
+
+                <div v-if="!files.length && !folders.length" class="file-item">
+                    <div class="name-column">Папка пуста</div>
+                    <div class="size-column"></div>
+                    <div class="date-column"></div>
+                    <div class="actions-column"></div>
                 </div>
             </div>
         </div>
