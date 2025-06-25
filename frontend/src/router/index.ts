@@ -1,23 +1,41 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import Files from '@/views/Files.vue'
-import Links from '@/views/Links.vue'
-
-const routes = [
-  {
-    path: '/',
-    name: 'Files',
-    component: Files
-  },
-  {
-    path: '/links',
-    name: 'Links',
-    component: Links
-  }
-]
+import { createRouter, createWebHistory } from "vue-router";
+import Files from "@/views/Files.vue";
+import Links from "@/views/Links.vue";
+import Login from "@/views/Login.vue";
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: routes, 
-})
+  history: createWebHistory(),
+  routes: [
+    {
+      path: "/",
+      name: "Files",
+      component: Files,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/login",
+      name: "Login",
+      component: Login,
+    },
+    {
+      path: "/links",
+      name: "Links",
+      component: Links,
+      meta: { requiresAuth: true },
+    },
+  ],
+});
 
-export default router
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("accessToken");
+
+  if (to.meta.requiresAuth && !token) {
+    next("/login");
+  } else if (to.path === "/login" && token) {
+    next("/");
+  } else {
+    next();
+  }
+});
+
+export default router;

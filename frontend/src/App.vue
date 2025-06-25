@@ -3,21 +3,27 @@ import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-<header class="header">
-  <button class="file button">
-    <img class="img" src="./assets/img/file_manager.svg" alt="">
-    <p>Файловый Менеджер</p>
-  </button>
-  <button class="links button">
-    <img class="img" src="./assets/img/link-header.svg" alt="">
-    <p>Мои Ссылки</p>
-  </button>
-</header>
+  <div class="app">
+    <header class="header">
+      <RouterLink to="/" class="file button">
+        <img class="img" src="./assets/img/file_manager.svg" alt="">
+        <p>Файловый Менеджер</p>
+      </RouterLink>
+      <RouterLink to="/links" class="links button">
+        <img class="img" src="./assets/img/link-header.svg" alt="">
+        <p>Мои Ссылки</p>
+      </RouterLink>
+    </header>
 
-<RouterView />
+    <RouterView />
+  </div>
 </template>
 
 <style scoped>
+.app {
+  min-height: 100vh;
+}
+
 .header {
   background-color: var(--bg-color-modal);
   height: 9vh;
@@ -39,7 +45,7 @@ import { RouterLink, RouterView } from 'vue-router'
   gap: 2vh;
   border-radius: 4px;
   background-color: var(--bg-color-modal);
-
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -56,5 +62,9 @@ p {
 .img {
   border: none;
   height: 2vh;
+}
+
+.router-link-active {
+  background-color: var(--hover-color);
 }
 </style>
