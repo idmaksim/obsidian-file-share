@@ -1,0 +1,24 @@
+:root {
+  --bg-color: #1f1f28;
+  --bg-color-modal: #2a2a37;
+  --white-color: #ffffff;
+  --grey-color: #999999;
+  --green-color: #22c55e;
+  --red-color: #ef4444;
+  --hover-color: #545487;
+  --border-color: #545487;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+body {
+  background-color: var(--bg-color);
+  font-family: "Montserrat", sans-serif;
+}
