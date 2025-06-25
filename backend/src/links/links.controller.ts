@@ -14,12 +14,12 @@ import { JwtAuthGuard } from '../auth/auth.guard';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 @Controller('links')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class LinksController {
   constructor(private linksService: LinksService) {}
 
   @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async createLink(@Body() dto: CreateLinkDto) {
     return this.linksService.createLink(dto);
   }
@@ -30,12 +30,16 @@ export class LinksController {
   }
 
   @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @ApiQuery({ name: 'search', required: false })
   async searchLinks(@Query('search') searchTerm: string) {
     return this.linksService.searchLinksByFileKey(searchTerm);
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   async deleteLink(@Param('id') id: string) {
     return this.linksService.deleteLink(id);
   }
