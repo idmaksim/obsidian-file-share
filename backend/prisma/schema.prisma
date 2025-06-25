@@ -8,8 +8,9 @@ datasource db {
 }
 
 model Link {
-  id        String    @id @default(cuid())
-  path      String
+  id        String    @id @default(uuid())
+  url       String    @unique
+  fileKey   String    @map("file_key")
   expiresAt DateTime? @map("expires_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
